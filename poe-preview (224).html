@@ -1,0 +1,648 @@
+<!DOCTYPE html><html lang="zh-HK"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粵語默書助手</title>
+    <style>
+        :root {
+            --primary-color: #4e54c8;
+            --secondary-color: #8f94fb;
+            --accent-color: #ff6b6b;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--dark-color);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .section {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select, textarea, button {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(78, 84, 200, 0.2);
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn:hover {
+            background: #3a40b0;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-accent {
+            background: var(--accent-color);
+        }
+        
+        .btn-accent:hover {
+            background: #ff5252;
+        }
+        
+        .flex-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .flex-row > * {
+            flex: 1;
+        }
+        
+        .controls {
+            display: none;
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 12px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 1.1rem;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .control-buttons button {
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .speed-container, .repeat-container {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+        }
+        
+        .option-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .option-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .option-buttons button {
+            flex: 1;
+            padding: 10px;
+            background: #f1f3f5;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .option-buttons button.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .checkbox-container input {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 480px) {
+            .control-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .control-buttons button {
+                font-size: 0.85rem;
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<script src="https://puc.poecdn.net/authenticated_preview_page/syncedState.bd4eeeb8e8e02052ee92.js"></script></head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-book"></i> 粵語默書助手</h1>
+            <p class="subtitle">專為香港小學生設計的默書練習工具</p>
+        </header>
+        
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-link"></i> Google Sheet 連結</h2>
+            <div class="input-group">
+                <label for="sheet-link">默書內容來源：</label>
+                <input type="text" id="sheet-link" value="https://docs.google.com/spreadsheets/d/12RmFsfmrO7GgQPnw-YUvjgIt41SPut8K0qSK_GOAj74/export?format=csv&amp;gid=0">
+            </div>
+            <button id="fetch-btn" class="btn">
+                <i class="fas fa-download"></i> 下載默書內容
+            </button>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-list"></i> 默書課題選項</h2>
+            <div class="input-group">
+                <label for="topic-select">選擇默書課題：</label>
+                <select id="topic-select">
+                    <option value="">請先下載默書內容</option>
+                </select>
+            </div>
+            <button id="load-content-btn" class="btn btn-secondary">
+                <i class="fas fa-check"></i> 確認
+            </button>
+        </div>
+        
+        <div class="section">
+            <div class="flex-row">
+                <h2 class="section-title"><i class="fas fa-edit"></i> 默書內容</h2>
+                <button id="toggle-content-btn" class="btn btn-secondary">
+                    <i class="fas fa-eye"></i> 隱藏內容
+                </button>
+            </div>
+            <textarea id="dictation-content" placeholder="默書內容將顯示在這裡..."></textarea>
+            <button id="start-btn" class="btn btn-accent">
+                <i class="fas fa-play"></i> 開始默書
+            </button>
+        </div>
+        
+        <div id="controls-section" class="section hidden">
+            <h2 class="section-title"><i class="fas fa-sliders-h"></i> 默書設定</h2>
+            
+            <div class="flex-row">
+                <div class="speed-container">
+                    <div class="option-title">播放速度：</div>
+                    <div class="option-buttons">
+                        <button data-speed="0.4">0.4x</button>
+                        <button data-speed="0.6">0.6x</button>
+                        <button data-speed="0.8">0.8x</button>
+                        <button data-speed="1.0" class="active">1.0x</button>
+                        <button data-speed="1.2">1.2x</button>
+                    </div>
+                </div>
+                
+                <div class="repeat-container">
+                    <div class="option-title">播放次數：</div>
+                    <div class="option-buttons">
+                        <button data-repeat="1" class="active">1次</button>
+                        <button data-repeat="2">2次</button>
+                        <button data-repeat="3">3次</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status">
+                <span id="current-line">0</span> / <span id="total-lines">0</span>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            
+            <div class="control-buttons">
+                <button id="prev-btn" class="btn"><i class="fas fa-step-backward"></i> 上一行</button>
+                <button id="replay-btn" class="btn"><i class="fas fa-redo"></i> 重播</button>
+                <button id="next-btn" class="btn"><i class="fas fa-step-forward"></i> 下一行</button>
+                <button id="stop-btn" class="btn"><i class="fas fa-stop"></i> 停止</button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>專為香港小學生設計 | 粵語默書練習工具</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全局變量
+        let dictationData = [];
+        let currentLine = 0;
+        let currentTopic = '';
+        let speechSynthesis = window.speechSynthesis;
+        let utterance = null;
+        let speaking = false;
+        let repeatCount = 1;
+        let speechRate = 1.0;
+        
+        // DOM元素
+        const sheetLinkInput = document.getElementById('sheet-link');
+        const fetchBtn = document.getElementById('fetch-btn');
+        const topicSelect = document.getElementById('topic-select');
+        const loadContentBtn = document.getElementById('load-content-btn');
+        const dictationContent = document.getElementById('dictation-content');
+        const toggleContentBtn = document.getElementById('toggle-content-btn');
+        const startBtn = document.getElementById('start-btn');
+        const controlsSection = document.getElementById('controls-section');
+        const currentLineSpan = document.getElementById('current-line');
+        const totalLinesSpan = document.getElementById('total-lines');
+        const progressBar = document.getElementById('progress-bar');
+        const prevBtn = document.getElementById('prev-btn');
+        const replayBtn = document.getElementById('replay-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 設置事件監聽器
+            fetchBtn.addEventListener('click', fetchSheetData);
+            loadContentBtn.addEventListener('click', loadContent);
+            toggleContentBtn.addEventListener('click', toggleContentVisibility);
+            startBtn.addEventListener('click', startDictation);
+            prevBtn.addEventListener('click', playPrevLine);
+            replayBtn.addEventListener('click', replayCurrentLine);
+            nextBtn.addEventListener('click', playNextLine);
+            stopBtn.addEventListener('click', stopPlayback);
+            
+            // 速度按鈕
+            document.querySelectorAll('[data-speed]').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('[data-speed]').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    speechRate = parseFloat(button.dataset.speed);
+                });
+            });
+            
+            // 重複次數按鈕
+            document.querySelectorAll('[data-repeat]').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('[data-repeat]').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    repeatCount = parseInt(button.dataset.repeat);
+                });
+            });
+        });
+        
+        // 獲取Google Sheet數據
+        async function fetchSheetData() {
+            const sheetUrl = sheetLinkInput.value;
+            if (!sheetUrl) {
+                alert('請輸入有效的Google Sheet連結');
+                return;
+            }
+            
+            try {
+                fetchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 載入中...';
+                fetchBtn.disabled = true;
+                
+                // 使用代理服務器解決CORS問題
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const response = await fetch(proxyUrl + sheetUrl);
+                
+                if (!response.ok) throw new Error('無法下載默書內容');
+                
+                const csvData = await response.text();
+                parseCSVData(csvData);
+                
+            } catch (error) {
+                console.error('獲取數據時出錯:', error);
+                alert('無法下載默書內容，請檢查連結是否正確');
+            } finally {
+                fetchBtn.innerHTML = '<i class="fas fa-download"></i> 下載默書內容';
+                fetchBtn.disabled = false;
+            }
+        }
+        
+        // 解析CSV數據
+        function parseCSVData(csvData) {
+            const rows = csvData.split('\n');
+            if (rows.length < 1) {
+                alert('CSV文件沒有內容');
+                return;
+            }
+            
+            // 提取課題選項（第一行的非空儲存格）
+            const topics = rows[0].split(',').filter(topic => topic.trim() !== '');
+            
+            // 存儲所有數據
+            dictationData = [];
+            for (let i = 1; i < rows.length; i++) {
+                const rowData = rows[i].split(',');
+                dictationData.push(rowData);
+            }
+            
+            // 填充課題下拉選單
+            topicSelect.innerHTML = '';
+            topics.forEach(topic => {
+                const option = document.createElement('option');
+                option.value = topic;
+                option.textContent = topic;
+                topicSelect.appendChild(option);
+            });
+            
+            alert(`成功載入${topics.length}個默書課題`);
+        }
+        
+        // 加載選定課題的內容
+        function loadContent() {
+            currentTopic = topicSelect.value;
+            if (!currentTopic) {
+                alert('請選擇默書課題');
+                return;
+            }
+            
+            const topicIndex = Array.from(topicSelect.options).findIndex(option => option.value === currentTopic);
+            if (topicIndex === -1) {
+                alert('找不到選定的課題');
+                return;
+            }
+            
+            // 提取該課題的所有內容（忽略空白行）
+            const contentLines = [];
+            for (let i = 0; i < dictationData.length; i++) {
+                const cellValue = dictationData[i][topicIndex] ? dictationData[i][topicIndex].trim() : '';
+                if (cellValue !== '') {
+                    contentLines.push(cellValue);
+                }
+            }
+            
+            // 更新文本區域
+            dictationContent.value = contentLines.join('\n');
+            totalLinesSpan.textContent = contentLines.length;
+            currentLineSpan.textContent = '0';
+            progressBar.style.width = '0%';
+        }
+        
+        // 切換內容可見性
+        function toggleContentVisibility() {
+            if (dictationContent.style.display === 'none') {
+                dictationContent.style.display = 'block';
+                toggleContentBtn.innerHTML = '<i class="fas fa-eye"></i> 隱藏內容';
+            } else {
+                dictationContent.style.display = 'none';
+                toggleContentBtn.innerHTML = '<i class="fas fa-eye-slash"></i> 顯示內容';
+            }
+        }
+        
+        // 開始默書
+        function startDictation() {
+            const lines = dictationContent.value.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                alert('請先加載默書內容');
+                return;
+            }
+            
+            // 隱藏輸入區域，顯示控制區域
+            document.querySelectorAll('.section').forEach(section => {
+                if (section.id !== 'controls-section') {
+                    section.classList.add('hidden');
+                }
+            });
+            controlsSection.classList.remove('hidden');
+            
+            // 重置進度
+            currentLine = 0;
+            totalLinesSpan.textContent = lines.length;
+            
+            // 播放第一行
+            playCurrentLine();
+        }
+        
+        // 播放當前行
+        function playCurrentLine() {
+            if (speaking) return;
+            
+            const lines = dictationContent.value.split('\n').filter(line => line.trim() !== '');
+            if (currentLine >= lines.length) {
+                alert('默書已完成！');
+                return;
+            }
+            
+            const text = lines[currentLine];
+            if (!text) return;
+            
+            // 更新UI
+            currentLineSpan.textContent = currentLine + 1;
+            progressBar.style.width = `${((currentLine + 1) / lines.length) * 100}%`;
+            
+            // 使用Web Speech API播放粵語
+            speakText(text, repeatCount);
+        }
+        
+        // 使用語音合成
+        function speakText(text, times) {
+            if (speaking || times <= 0) return;
+            
+            speaking = true;
+            
+            // 創建新的語音實例
+            utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-HK'; // 設置為粵語
+            utterance.rate = speechRate;
+            utterance.pitch = 1;
+            
+            // 播放完成後的處理
+            utterance.onend = () => {
+                speaking = false;
+                
+                // 根據字數計算停頓時間（每個字0.5秒）
+                const pauseDuration = text.length * 500;
+                
+                // 如果需要重複播放
+                if (times > 1) {
+                    setTimeout(() => {
+                        speakText(text, times - 1);
+                    }, pauseDuration);
+                }
+            };
+            
+            // 播放語音
+            speechSynthesis.speak(utterance);
+        }
+        
+        // 播放上一行
+        function playPrevLine() {
+            if (currentLine > 0) {
+                currentLine--;
+                playCurrentLine();
+            } else {
+                alert('已經是第一行');
+            }
+        }
+        
+        // 重播當前行
+        function replayCurrentLine() {
+            playCurrentLine();
+        }
+        
+        // 播放下一行
+        function playNextLine() {
+            const lines = dictationContent.value.split('\n').filter(line => line.trim() !== '');
+            if (currentLine < lines.length - 1) {
+                currentLine++;
+                playCurrentLine();
+            } else {
+                alert('默書已完成！');
+            }
+        }
+        
+        // 停止播放
+        function stopPlayback() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                speaking = false;
+            }
+        }
+        
+        // 初始化語音合成
+        function initSpeechSynthesis() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.onvoiceschanged = () => {
+                    // 確保有可用的語音
+                };
+            } else {
+                alert('抱歉，您的瀏覽器不支持語音合成功能');
+            }
+        }
+        
+        // Page load時初始化語音
+        window.onload = initSpeechSynthesis;
+    </script>
+
+
+</body></html>
