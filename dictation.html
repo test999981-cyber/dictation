@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>默書 App (自動語言版)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative; /* For absolute positioning if needed */
+        }
+        h1, h2, h3 {
+            text-align: center;
+            color: #007aff;
+            margin-top: 0;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        .hidden {
+            display: none;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Secondary buttons (Grey) */
+        button.secondary {
+            background-color: #e5e5ea;
+            color: #333;
+        }
+        button.secondary:hover {
+            background-color: #d1d1d6;
+        }
+        /* Primary Action Button (Green) */
+        button.primary-action {
+            background-color: #34c759; 
+            font-size: 1.1em;
+        }
+        button.primary-action:hover {
+            background-color: #28a745;
+        }
+
+        /* Back Button (Top Left) */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .btn-back {
+            background: none;
+            color: #007aff;
+            border: none;
+            width: auto;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: left;
+            margin: 0;
+        }
+        .btn-back:hover {
+            background: #f0f0f5;
+            text-decoration: underline;
+        }
+
+        .status-msg {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .error-msg {
+            color: #ff3b30;
+            font-weight: bold;
+        }
+        
+        /* Display Area */
+        .player-display-container {
+            position: relative;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin: 15px 0;
+            padding: 20px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .player-text {
+            font-size: 3.0em;
+            text-align: center;
+            white-space: pre-wrap;
+            font-weight: 500;
+        }
+        .lang-badge {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 10px;
+            background: #eee;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: #555;
+            width: auto;
+            margin-top: 10px;
+            font-size: 0.9em;
+            padding: 5px 15px;
+        }
+        .toggle-btn:hover {
+            background: #eee;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        .controls button {
+            flex: 1;
+        }
+        #debugInfo {
+            font-size: 12px;
+            color: #999;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- Setup Section -->
+    <div id="setupSection">
+        <h1>默書 App</h1>
+        <div class="section">
+            <h2>設定默書內容</h2>
+            
+            <!-- User Dropdown -->
+            <label for="userSelect">選擇使用者</label>
+            <select id="userSelect" onchange="handleUserChange()">
+                <option value="12RmFsfmrO7GgQPnw-YUvjgIt41SPut8K0qSK_GOAj74" selected>Alfred</option>
+                <option value="15u9NKmyAY06MLgH_-O7iUbnLMM2VlpuGsE3_H76a1ss">Max</option>
+            </select>
+    
+            <label>Google Sheet 連結 (或 ID)</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="sheetUrlInput" placeholder="貼上 Google Sheet ID 或 URL">
+                <button type="button" onclick="loadFromInput()" style="width:auto;">貼上</button>
+            </div>
+            
+            <div id="loadingStatus" class="status-msg"></div>
+            <div id="errorMessage" class="status-msg error-msg"></div>
+    
+            <label for="topicSelect">課題選項 (來自第一行)</label>
+            <select id="topicSelect" disabled>
+                <option value="">請先載入數據...</option>
+            </select>
+    
+            <label for="manualContent">默書內容 (每行一句)</label>
+            <textarea id="manualContent" rows="5" placeholder="在此輸入或從 Sheet 載入..."></textarea>
+    
+            <button onclick="startDictation()">開始默書</button>
+            
+            <div id="debugInfo">調試信息：</div>
+        </div>
+    </div>
+
+    <!-- Player Section -->
+    <div id="playerSection" class="hidden">
+        <!-- Top Bar with Back Button -->
+        <div class="top-bar">
+            <button class="btn-back" onclick="stopDictation()">❮ 結束默書</button>
+            <div style="font-weight:bold; color:#007aff;">正在默書</div>
+            <div style="width: 80px;"></div> <!-- Spacer for centering -->
+        </div>
+        
+        <div class="section">
+            <h3>播放設定</h3>
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>播放速度</label>
+                    <select id="rateSelect">
+                        <option value="0.1">0.1x</option>
+                        <option value="0.2">0.2x</option>
+                        <option value="0.4">0.4x</option>
+                        <option value="0.6" selected>0.6x (預設)</option>
+                        <option value="0.8">0.8x</option>
+                        <option value="1.0">1.0x</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label>重複次數</label>
+                    <select id="repeatSelect">
+                        <option value="1">1次</option>
+                        <option value="2">2次</option>
+                        <option value="3">3次</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>
+                <input type="checkbox" id="punctuationCheck" style="width:auto;"> 朗讀標點符號
+            </label>
+        </div>
+
+        <div class="section">
+            <div style="text-align:center; color:#666; margin-bottom:5px;">
+                進度：<span id="currentIndex">0</span> / <span id="totalIndex">0</span>
+            </div>
+            
+            <div class="player-display-container">
+                <div id="detectedLang" class="lang-badge">自動偵測中...</div>
+                <div class="player-text" id="displayArea">準備開始...</div>
+                <button class="toggle-btn" onclick="toggleContent()">👁️ 顯示/隱藏內容</button>
+            </div>
+
+            <div class="controls">
+                <button class="secondary" onclick="prevLine()">上一行</button>
+                <button class="secondary" onclick="replayLine()">重播</button>
+                <button class="primary-action" onclick="nextLine()">下一行</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State variables
+    let sheetData = {}; 
+    let currentLines = [];
+    let currentLineIndex = 0;
+    let synth = window.speechSynthesis;
+    let isContentHidden = true; // Default to hidden
+
+    // Initialize
+    window.onload = function() {
+        handleUserChange();
+        // Ensure voices are loaded
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = function() {
+                console.log("Voices loaded");
+            };
+        }
+    };
+
+    // --- Data Loading Logic ---
+
+    function handleUserChange() {
+        const select = document.getElementById('userSelect');
+        const selectedId = select.value;
+        document.getElementById('sheetUrlInput').value = selectedId;
+        fetchSheetData(selectedId);
+    }
+
+    function loadFromInput() {
+        const input = document.getElementById('sheetUrlInput').value.trim();
+        let id = input;
+        if (input.includes('/d/')) {
+            const matches = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (matches && matches[1]) {
+                id = matches[1];
+            }
+        }
+        fetchSheetData(id);
+    }
+
+    function fetchSheetData(sheetId) {
+        if (!sheetId) return;
+
+        const status = document.getElementById('loadingStatus');
+        const errorDiv = document.getElementById('errorMessage');
+        const debug = document.getElementById('debugInfo');
+        
+        status.innerText = "正在從Google Sheet載入數據...";
+        errorDiv.innerText = "";
+        debug.innerText = "調試信息：正在請求 " + sheetId;
+
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.text();
+            })
+            .then(csvText => {
+                parseCSV(csvText);
+                status.innerText = "載入成功";
+            })
+            .catch(err => {
+                console.error(err);
+                status.innerText = "";
+                errorDiv.innerText = "錯誤：無法載入數據，請檢查權限或 ID。";
+                debug.innerText += "\nFetch Error: " + err.message;
+            });
+    }
+
+    // --- CSV Parsing Logic ---
+    function parseCSV(text) {
+        sheetData = {};
+        const lines = text.split(/\r?\n/); 
+        
+        if (lines.length < 1) {
+             document.getElementById('errorMessage').innerText = "錯誤：CSV 內容為空";
+             return;
+        }
+
+        const headerLine = lines[0];
+        const headers = parseCSVLine(headerLine);
+        
+        headers.forEach(header => {
+            let topicName = cleanCSVValue(header);
+            if (topicName) {
+                sheetData[topicName] = [];
+            }
+        });
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+
+            const cols = parseCSVLine(line);
+
+            cols.forEach((cellValue, colIndex) => {
+                if (colIndex < headers.length) {
+                    const topicName = cleanCSVValue(headers[colIndex]);
+                    const content = cleanCSVValue(cellValue);
+
+                    if (topicName && content) {
+                        sheetData[topicName].push(content);
+                    }
+                }
+            });
+        }
+
+        updateTopicDropdown();
+    }
+
+    function parseCSVLine(line) {
+        const result = [];
+        let startValueIndex = 0;
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === '"') {
+                inQuotes = !inQuotes;
+            } else if (line[i] === ',' && !inQuotes) {
+                let val = line.substring(startValueIndex, i);
+                result.push(val);
+                startValueIndex = i + 1;
+            }
+        }
+        let val = line.substring(startValueIndex);
+        result.push(val);
+        return result;
+    }
+
+    function cleanCSVValue(val) {
+        if (!val) return "";
+        val = val.trim();
+        if (val.startsWith('"') && val.endsWith('"')) {
+            val = val.slice(1, -1);
+            val = val.replace(/""/g, '"');
+        }
+        return val;
+    }
+
+    function updateTopicDropdown() {
+        const select = document.getElementById('topicSelect');
+        select.innerHTML = '';
+        const topics = Object.keys(sheetData);
+        
+        if (topics.length === 0) {
+            const option = document.createElement('option');
+            option.text = "無數據";
+            select.add(option);
+            select.disabled = true;
+            return;
+        }
+
+        topics.forEach(topic => {
+            const option = document.createElement('option');
+            option.value = topic;
+            option.text = topic + ` (${sheetData[topic].length}句)`;
+            select.add(option);
+        });
+        
+        select.disabled = false;
+        if (topics.length > 0) {
+            select.value = topics[0];
+            fillManualContent(topics[0]);
+        }
+        select.onchange = () => fillManualContent(select.value);
+    }
+
+    function fillManualContent(topic) {
+        const content = sheetData[topic] || [];
+        document.getElementById('manualContent').value = content.join('\n');
+    }
+
+    // --- Playback Logic ---
+
+    function startDictation() {
+        const text = document.getElementById('manualContent').value;
+        if (!text.trim()) {
+            alert("請先輸入或載入默書內容");
+            return;
+        }
+
+        currentLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (currentLines.length === 0) return;
+
+        currentLineIndex = 0;
+        isContentHidden = true; // Reset to hidden on start
+        document.getElementById('totalIndex').innerText = currentLines.length;
+        
+        document.getElementById('setupSection').classList.add('hidden');
+        document.getElementById('playerSection').classList.remove('hidden');
+        
+        updateDisplay();
+        speakCurrentLine();
+    }
+
+    function stopDictation() {
+        synth.cancel();
+        document.getElementById('playerSection').classList.add('hidden');
+        document.getElementById('setupSection').classList.remove('hidden');
+    }
+
+    function toggleContent() {
+        isContentHidden = !isContentHidden;
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        document.getElementById('currentIndex').innerText = currentLineIndex + 1;
+        
+        const originalText = currentLines[currentLineIndex];
+        const displayArea = document.getElementById('displayArea');
+        
+        // Auto detect language for display badge
+        const isChinese = /[\u4e00-\u9fa5]/.test(originalText);
+        const langText = isChinese ? "粵語" : "英語 (UK)";
+        document.getElementById('detectedLang').innerText = "語言: " + langText;
+
+        if (isContentHidden) {
+            // Replace non-whitespace characters with *
+            // This preserves spaces so user knows word count for English
+            displayArea.innerText = originalText.replace(/[^\s]/g, '*');
+        } else {
+            displayArea.innerText = originalText;
+        }
+    }
+
+    function prevLine() {
+        if (currentLineIndex > 0) {
+            currentLineIndex--;
+            isContentHidden = true; // Hide again when moving
+            updateDisplay();
+            speakCurrentLine();
+        }
+    }
+
+    function nextLine() {
+        if (currentLineIndex < currentLines.length - 1) {
+            currentLineIndex++;
+            isContentHidden = true; // Hide again when moving
+            updateDisplay();
+            speakCurrentLine();
+        } else {
+            document.getElementById('displayArea').innerText = "默書結束";
+            document.getElementById('detectedLang').innerText = "";
+            synth.cancel();
+        }
+    }
+
+    function replayLine() {
+        speakCurrentLine();
+    }
+
+    function speakCurrentLine() {
+        synth.cancel();
+
+        const text = currentLines[currentLineIndex];
+        const repeatCount = parseInt(document.getElementById('repeatSelect').value);
+        const rate = parseFloat(document.getElementById('rateSelect').value);
+        
+        // Auto Detect Language
+        // If contains Chinese characters -> zh-HK, else -> en-GB
+        const isChinese = /[\u4e00-\u9fa5]/.test(text);
+        const lang = isChinese ? 'zh-HK' : 'en-GB';
+
+        playRepeat(text, repeatCount, 0, rate, lang);
+    }
+
+    function playRepeat(text, totalRepeats, currentRepeat, rate, lang) {
+        if (currentRepeat >= totalRepeats) return;
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = rate;
+        
+        const voices = synth.getVoices();
+        if (lang === 'en-GB') {
+            // Try to find Samantha or a GB voice
+            // Note: Samantha is actually en-US on some systems but sounds good. 
+            // Strict request was British English. Let's look for 'en-GB'.
+            let voice = voices.find(v => v.lang === 'en-GB');
+            // Fallback to Samantha if GB not found (common on Mac/iOS for good quality)
+            if (!voice) voice = voices.find(v => v.name.includes('Samantha'));
+            if (voice) utterance.voice = voice;
+        } else if (lang === 'zh-HK') {
+             const cantonese = voices.find(v => v.lang === 'zh-HK');
+             if (cantonese) utterance.voice = cantonese;
+        }
+
+        utterance.onend = function() {
+            if (currentRepeat < totalRepeats - 1) {
+                setTimeout(() => {
+                    playRepeat(text, totalRepeats, currentRepeat + 1, rate, lang);
+                }, 500); 
+            }
+        };
+
+        utterance.onerror = function(e) {
+            console.error("Speech error", e);
+        };
+
+        synth.speak(utterance);
+    }
+</script>
+
+</body>
+</html>
